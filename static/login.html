@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Z-Cloud - Distributed Cloud Storage Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #F5F7FA 0%, #E8EEF5 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #FFFFFF;
+            min-height: 500px;
+        }
+
+        .branding-section {
+            flex: 1;
+            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+            color: #FFFFFF;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 48px;
+            margin-bottom: 30px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .branding-section h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .branding-section p {
+            font-size: 16px;
+            opacity: 0.9;
+            line-height: 1.6;
+            margin-bottom: 40px;
+        }
+
+        .features {
+            text-align: left;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .feature-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 12px;
+        }
+
+        .form-section {
+            flex: 1;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-header {
+            margin-bottom: 40px;
+        }
+
+        .form-header h2 {
+            font-size: 28px;
+            color: #202124;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .form-header p {
+            font-size: 14px;
+            color: #5F6368;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #202124;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #E3E3E3;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            background: #FAFBFC;
+        }
+
+        .form-group input:hover {
+            border-color: #D3D3D3;
+            background: #FFFFFF;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #9C27B0;
+            background: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #9AA0A6;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            cursor: pointer;
+            accent-color: #9C27B0;
+        }
+
+        .checkbox-group label {
+            font-size: 14px;
+            color: #5F6368;
+            margin: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .forgot-password {
+            display: block;
+            font-size: 14px;
+            color: #9C27B0;
+            text-decoration: none;
+            margin-bottom: 24px;
+            transition: color 0.3s ease;
+            font-weight: 500;
+        }
+
+        .forgot-password:hover {
+            color: #7B1FA2;
+            text-decoration: underline;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 12px 24px;
+            background: #9C27B0;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 16px;
+        }
+
+        .login-button:hover {
+            background: #7B1FA2;
+            box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+        }
+
+        .login-button:active {
+            transform: translateY(1px);
+        }
+
+        .signup-link {
+            text-align: center;
+            font-size: 14px;
+            color: #5F6368;
+        }
+
+        .signup-link a {
+            color: #9C27B0;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .signup-link a:hover {
+            color: #7B1FA2;
+            text-decoration: underline;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+                min-height: auto;
+            }
+
+            .branding-section {
+                padding: 40px 30px;
+                min-height: 250px;
+                justify-content: center;
+            }
+
+            .branding-section h1 {
+                font-size: 24px;
+            }
+
+            .branding-section p {
+                font-size: 14px;
+                margin-bottom: 24px;
+            }
+
+            .form-section {
+                padding: 40px 30px;
+            }
+
+            .form-header h2 {
+                font-size: 22px;
+            }
+
+            .features {
+                display: none;
+            }
+
+            .logo {
+                font-size: 36px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .branding-section {
+                padding: 30px 20px;
+            }
+
+            .form-section {
+                padding: 30px 20px;
+            }
+
+            .form-header h2 {
+                font-size: 20px;
+            }
+
+            .form-group input {
+                padding: 10px 12px;
+            }
+
+            .logo {
+                font-size: 28px;
+                margin-bottom: 16px;
+            }
+
+            .logo-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+        }
+
+        /* Animations */
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .branding-section {
+            animation: slideInLeft 0.6s ease-out;
+        }
+
+        .form-section {
+            animation: slideInRight 0.6s ease-out;
+        }
+
+        /* Input autofill styling */
+        .form-group input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 1000px #FAFBFC inset !important;
+            -webkit-text-fill-color: #202124 !important;
+        }
+
+        .form-group input:-webkit-autofill:focus {
+            -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+        }
+
+        /* Loading spinner for button (optional) */
+        .login-button.loading {
+            pointer-events: none;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Branding Section -->
+        <div class="branding-section">
+            <div class="logo">
+                <div class="logo-icon">☁️</div>
+                <span>Z-Cloud</span>
+            </div>
+            <h1>Secure Cloud Storage</h1>
+            <p>Experience enterprise-grade distributed file storage with automatic replication and fault tolerance.</p>
+            
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">✓</div>
+                    <span>Distributed Architecture</span>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">✓</div>
+                    <span>Automatic Replication</span>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">✓</div>
+                    <span>Fault Tolerance</span>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">✓</div>
+                    <span>Real-Time Monitoring</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Form Section -->
+        <div class="form-section">
+            <div class="form-header">
+                <h2>Welcome Back</h2>
+                <p>Sign in to access your cloud storage</p>
+            </div>
+
+            <!-- Step 1: Email & Password Login -->
+            <form id="loginForm" style="display: block;">
+                <!-- Email Input -->
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        placeholder="Enter your email"
+                        required
+                    >
+                </div>
+
+                <!-- Password Input -->
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label for="password">Password</label>
+                    <button type="button" onclick="togglePasswordVisibility('password')" style="background: none; border: none; color: #9C27B0; cursor: pointer; font-size: 12px; font-weight: 600;">👁️ Show</button>
+                    </div>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="Enter your password"
+                        required
+                    >
+                </div>
+
+                <!-- Remember Me Checkbox -->
+                <div class="checkbox-group">
+                    <input 
+                        type="checkbox" 
+                        id="remember" 
+                        name="remember"
+                    >
+                    <label for="remember">Remember me for 30 days</label>
+                </div>
+
+                <!-- Forgot Password Link -->
+                <a href="/reset" class="forgot-password">Forgot your password?</a>
+
+                <!-- Login Button -->
+                <button type="submit" class="login-button">Sign In</button>
+
+                <!-- Sign Up Link -->
+                <div class="signup-link">
+                    Don't have an account? <a href="/register">Create one now</a>
+                </div>
+            </form>
+
+            <!-- Step 2: OTP Verification -->
+            <form id="otpForm" style="display: none;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📧</div>
+                    <h3 style="font-size: 20px; color: #202124; margin-bottom: 8px;">Verify Your Email</h3>
+                    <p style="color: #5F6368; font-size: 14px;">An OTP code has been sent to your email address</p>
+                    <p id="otpEmail" style="color: #9C27B0; font-weight: 600; margin-top: 8px;"></p>
+                </div>
+
+                <!-- OTP Input -->
+                <div class="form-group">
+                    <label for="otp">Enter 6-Digit OTP Code</label>
+                    <input
+                        type="text"
+                        id="otp"
+                        name="otp"
+                        placeholder="000000"
+                        maxlength="6"
+                        pattern="[0-9]{6}"
+                        required
+                    >
+                </div>
+
+                <!-- Resend OTP -->
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <p style="font-size: 14px; color: #5F6368;">Didn't receive the code?</p>
+                    <button type="button" id="resendBtn" onclick="resendOTP()" style="background: none; border: none; color: #9C27B0; cursor: pointer; font-weight: 600; margin-top: 8px;">Resend OTP</button>
+                    <div id="resendTimer" style="font-size: 12px; color: #9AA0A6; margin-top: 8px;"></div>
+                </div>
+
+                <!-- Verify Button -->
+                <button type="submit" class="login-button">Verify & Login</button>
+
+                <!-- Back Button -->
+                <button type="button" onclick="goBackToLogin()" style="width: 100%; margin-top: 12px; background: #F8F9FA; color: #202124; border: 1px solid #DADCE0; padding: 12px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px;">Back</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let loginAttempt = { email: '', password: '', remember: false };
+        let otpResendTimer = 0;
+
+        // Step 1: Handle email & password login
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const remember = document.getElementById('remember').checked;
+            const loginButton = document.querySelector('.login-button');
+
+            // Add loading state
+            loginButton.classList.add('loading');
+            loginButton.textContent = 'Signing in...';
+            loginButton.disabled = true;
+
+            try {
+                // Call backend for direct login
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    alert('Login successful! Redirecting to dashboard...');
+                    window.location.href = '/dashboard';
+                } else {
+                    alert('Login failed: ' + (data.error || 'Invalid credentials'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+            } finally {
+                loginButton.classList.remove('loading');
+                loginButton.textContent = 'Sign In';
+                loginButton.disabled = false;
+            }
+        });
+
+        // Step 2: Handle OTP verification
+        document.getElementById('otpForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const otp = document.getElementById('otp').value;
+            const email = loginAttempt.email;
+            const password = loginAttempt.password;
+            const verifyButton = document.querySelector('.login-button');
+
+            // Add loading state
+            verifyButton.classList.add('loading');
+            verifyButton.textContent = 'Verifying...';
+            verifyButton.disabled = true;
+
+            try {
+                // Verify OTP
+                const response = await fetch('/api/auth/verify-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password, otp })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    alert('Login successful! Redirecting to dashboard...');
+                    window.location.href = '/dashboard';
+                } else {
+                    alert('Invalid OTP. ' + (data.error || 'Please try again.'));
+                    document.getElementById('otp').value = '';
+                    document.getElementById('otp').focus();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+            } finally {
+                verifyButton.classList.remove('loading');
+                verifyButton.textContent = 'Verify & Login';
+                verifyButton.disabled = false;
+            }
+        });
+
+        // Resend OTP
+        function resendOTP() {
+            const resendBtn = document.getElementById('resendBtn');
+            const email = loginAttempt.email;
+
+            resendBtn.disabled = true;
+            resendBtn.textContent = 'Sending...';
+
+            fetch('/api/auth/send-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password: loginAttempt.password })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('New OTP sent to your email!');
+                    startResendTimer();
+                } else {
+                    alert('Failed to resend OTP');
+                    resendBtn.disabled = false;
+                    resendBtn.textContent = 'Resend OTP';
+                }
+            });
+        }
+
+        // Resend timer
+        function startResendTimer() {
+            otpResendTimer = 60;
+            const resendBtn = document.getElementById('resendBtn');
+            const timerDiv = document.getElementById('resendTimer');
+
+            const interval = setInterval(() => {
+                otpResendTimer--;
+                if (otpResendTimer <= 0) {
+                    clearInterval(interval);
+                    resendBtn.disabled = false;
+                    resendBtn.textContent = 'Resend OTP';
+                    timerDiv.textContent = '';
+                } else {
+                    timerDiv.textContent = `Resend available in ${otpResendTimer}s`;
+                }
+            }, 1000);
+        }
+
+        // Go back to login
+        function goBackToLogin() {
+            document.getElementById('otpForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('email').focus();
+        }
+
+        // Toggle password visibility
+        function togglePasswordVisibility(fieldId) {
+            const field = document.getElementById(fieldId);
+            const isPassword = field.type === 'password';
+            field.type = isPassword ? 'text' : 'password';
+            
+            // Update button text
+            event.target.textContent = isPassword ? '🙈 Hide' : '👁️ Show';
+        }
+    </script>
+</body>
+</html>

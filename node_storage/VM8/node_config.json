@@ -1,0 +1,14 @@
+{
+  "node_id": "Node8",
+  "host": "localhost",
+  "port": 8084,
+  "cpu_cores": 4,
+  "cpu_speed": 2.5,
+  "ram_gb": 8,
+  "storage_gb": 500,
+  "bandwidth_mbps": 100,
+  "mac_address": "f4:3e:48:70:b1:c3",
+  "created_at": "2025-10-14T16:02:17.298070",
+  "status": "starting",
+  "start_requested_at": "2025-10-14T16:02:17.995861"
+}

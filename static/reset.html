@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Z-Cloud - Forgot Password</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #F5F7FA 0%, #E8EEF5 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .reset-container {
+            width: 100%;
+            max-width: 500px;
+            background: #FFFFFF;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            padding: 60px 40px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+        }
+
+        .logo-text {
+            color: #202124;
+            font-weight: 700;
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .form-header h2 {
+            font-size: 28px;
+            color: #202124;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .form-header p {
+            font-size: 14px;
+            color: #5F6368;
+            line-height: 1.6;
+        }
+
+        .steps {
+            background: #F0F4F8;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 30px 0;
+            border-left: 4px solid #9C27B0;
+        }
+
+        .steps h3 {
+            font-size: 13px;
+            color: #202124;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .steps ol {
+            margin-left: 20px;
+            font-size: 13px;
+            color: #5F6368;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #202124;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #E3E3E3;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            background: #FAFBFC;
+        }
+
+        .form-group input:hover {
+            border-color: #D3D3D3;
+            background: #FFFFFF;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #9C27B0;
+            background: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #9AA0A6;
+        }
+
+        .reset-button {
+            width: 100%;
+            padding: 12px 24px;
+            background: #9C27B0;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 16px;
+        }
+
+        .reset-button:hover {
+            background: #7B1FA2;
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+        }
+
+        .reset-button:active {
+            transform: translateY(1px);
+        }
+
+        .back-to-login {
+            text-align: center;
+            font-size: 14px;
+            color: #5F6368;
+        }
+
+        .back-to-login a {
+            color: #9C27B0;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .back-to-login a:hover {
+            color: #7B1FA2;
+            text-decoration: underline;
+        }
+
+        .success-message {
+            display: none;
+            background: #E6F4EA;
+            border: 1px solid #34A853;
+            color: #137333;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .success-message.show {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 480px) {
+            .reset-container {
+                padding: 40px 20px;
+            }
+
+            .form-header h2 {
+                font-size: 22px;
+            }
+
+            .logo {
+                font-size: 32px;
+                margin-bottom: 20px;
+            }
+
+            .logo-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+
+            .steps {
+                padding: 12px;
+                font-size: 12px;
+            }
+
+            .form-group input {
+                padding: 10px 12px;
+            }
+        }
+
+        .reset-button.loading {
+            pointer-events: none;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="reset-container">
+        <!-- Logo -->
+        <div class="logo">
+            <div class="logo-icon">☁️</div>
+            <span class="logo-text">Z-Cloud</span>
+        </div>
+
+        <!-- Header -->
+        <div class="form-header">
+            <h2>Reset Your Password</h2>
+            <p>Enter your email address and we'll send you instructions to reset your password.</p>
+        </div>
+
+        <!-- Success Message -->
+        <div class="success-message" id="successMessage">
+            ✓ Check your email for password reset instructions.<br>
+            The link will expire in 24 hours.
+        </div>
+
+        <!-- Steps Info -->
+        <div class="steps">
+            <h3>How it works:</h3>
+            <ol>
+                <li>Enter your email address</li>
+                <li>Check your inbox for reset link</li>
+                <li>Click the link and create new password</li>
+                <li>Return and sign in with new password</li>
+            </ol>
+        </div>
+
+        <!-- Reset Form -->
+        <form id="resetForm">
+            <!-- Email -->
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    placeholder="Enter your registered email"
+                    required
+                >
+            </div>
+
+            <!-- Reset Button -->
+            <button type="submit" class="reset-button">Send Reset Link</button>
+
+            <!-- Back to Login -->
+            <div class="back-to-login">
+                Remember your password? <a href="/login">Sign In</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const resetForm = document.getElementById('resetForm');
+        const resetButton = document.querySelector('.reset-button');
+        const successMessage = document.getElementById('successMessage');
+
+        resetForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+
+            // Add loading state
+            resetButton.classList.add('loading');
+            resetButton.textContent = 'Sending...';
+            resetButton.disabled = true;
+
+            // Simulate API call
+            setTimeout(() => {
+                console.log('Password reset requested for:', email);
+
+                // Show success message
+                successMessage.classList.add('show');
+
+                // Disable form inputs
+                document.getElementById('email').disabled = true;
+
+                // Update button
+                resetButton.textContent = 'Link Sent Successfully';
+                resetButton.style.background = '#34A853';
+
+                // Provide redirect after delay
+                setTimeout(() => {
+                    alert('In a real application, you would:\n1. Receive an email with reset link\n2. Click the link to create new password\n3. Return to login page\n\nRedirecting to login page...');
+                    window.location.href = '/login';
+                }, 3000);
+            }, 1500);
+        });
+    </script>
+</body>
+</html>

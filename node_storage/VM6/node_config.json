@@ -1,0 +1,14 @@
+{
+  "node_id": "Node6",
+  "host": "localhost",
+  "port": 5001,
+  "cpu_cores": 4,
+  "cpu_speed": 2.5,
+  "ram_gb": 8,
+  "storage_gb": 500,
+  "bandwidth_mbps": 100,
+  "mac_address": "14:af:fc:de:67:01",
+  "created_at": "2025-08-26T07:51:28.001950",
+  "status": "starting",
+  "start_requested_at": "2025-11-25T09:53:23.938675"
+}

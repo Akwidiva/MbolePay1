@@ -1,0 +1,198 @@
+syntax = "proto3";
+
+package fileservice;
+
+// File transfer and node management service
+service FileService {
+    // Node management
+    rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
+    rpc SendHeartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+    rpc UnregisterNode(UnregisterNodeRequest) returns (UnregisterNodeResponse);
+    rpc GetNodeStatus(NodeStatusRequest) returns (NodeStatusResponse);
+    
+    // File operations
+    rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+    rpc GetFileInfo(FileInfoRequest) returns (FileInfoResponse);
+    rpc UploadFile(stream UploadChunkRequest) returns (UploadResponse);
+    rpc DownloadFile(DownloadRequest) returns (stream DownloadChunkResponse);
+    
+    // Node-to-node file transfer
+    rpc TransferChunk(TransferChunkRequest) returns (TransferChunkResponse);
+    rpc RequestChunk(ChunkRequest) returns (ChunkResponse);
+}
+
+// Node registration messages
+message RegisterNodeRequest {
+    string node_id = 1;
+    string host = 2;
+    int32 port = 3;
+    string mac_address = 4;
+    NodeResources resources = 5;
+}
+
+message RegisterNodeResponse {
+    bool success = 1;
+    string message = 2;
+    string assigned_id = 3;
+}
+
+message NodeResources {
+    int32 cpu_cores = 1;
+    double cpu_speed = 2;
+    int64 ram_bytes = 3;
+    int64 storage_bytes = 4;
+    int64 bandwidth_bps = 5;
+}
+
+// Heartbeat messages
+message HeartbeatRequest {
+    string node_id = 1;
+    int64 timestamp = 2;
+    NodeStatus status = 3;
+}
+
+message HeartbeatResponse {
+    bool acknowledged = 1;
+    int64 server_timestamp = 2;
+}
+
+message NodeStatus {
+    bool is_online = 1;
+    double cpu_usage = 2;
+    int64 ram_used = 3;
+    int64 storage_used = 4;
+    double network_utilization = 5;
+    int32 active_connections = 6;
+}
+
+// Node management messages
+message UnregisterNodeRequest {
+    string node_id = 1;
+    string reason = 2;
+}
+
+message UnregisterNodeResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message NodeStatusRequest {
+    string requesting_node_id = 1;
+    string target_node_id = 2; // Empty for all nodes
+}
+
+message NodeStatusResponse {
+    repeated NodeInfo nodes = 1;
+}
+
+message NodeInfo {
+    string node_id = 1;
+    string host = 2;
+    int32 port = 3;
+    string mac_address = 4;
+    bool is_online = 5;
+    int64 last_seen = 6;
+    NodeResources resources = 7;
+    NodeStatus status = 8;
+}
+
+// File operation messages
+message ListFilesRequest {
+    string requesting_node_id = 1;
+}
+
+message ListFilesResponse {
+    repeated FileMetadata files = 1;
+}
+
+message FileMetadata {
+    string filename = 1;
+    int64 size = 2;
+    string upload_date = 3;
+    repeated string replica_nodes = 4;
+    string checksum = 5;
+    int32 chunk_count = 6;
+    string file_id = 7;
+}
+
+message FileInfoRequest {
+    string requesting_node_id = 1;
+    string filename = 2;
+}
+
+message FileInfoResponse {
+    bool found = 1;
+    FileMetadata metadata = 2;
+    repeated ReplicaInfo replicas = 3;
+}
+
+message ReplicaInfo {
+    string node_id = 1;
+    bool is_online = 2;
+    int32 latency_ms = 3;
+    double load_factor = 4;
+}
+
+// File upload messages
+message UploadChunkRequest {
+    string filename = 1;
+    int32 chunk_id = 2;
+    int32 total_chunks = 3;
+    bytes chunk_data = 4;
+    string checksum = 5;
+    string uploading_node_id = 6;
+    bool is_last_chunk = 7;
+}
+
+message UploadResponse {
+    bool success = 1;
+    string message = 2;
+    string file_id = 3;
+    repeated string replica_nodes = 4;
+    int64 total_size = 5;
+}
+
+// File download messages
+message DownloadRequest {
+    string requesting_node_id = 1;
+    string filename = 2;
+    string preferred_replica = 3; // Optional
+}
+
+message DownloadChunkResponse {
+    string filename = 1;
+    int32 chunk_id = 2;
+    int32 total_chunks = 3;
+    bytes chunk_data = 4;
+    string checksum = 5;
+    bool is_last_chunk = 6;
+    string serving_node_id = 7;
+}
+
+// Node-to-node transfer messages
+message TransferChunkRequest {
+    string file_id = 1;
+    int32 chunk_id = 2;
+    bytes chunk_data = 3;
+    string checksum = 4;
+    string source_node_id = 5;
+}
+
+message TransferChunkResponse {
+    bool success = 1;
+    string message = 2;
+    string stored_checksum = 3;
+}
+
+message ChunkRequest {
+    string requesting_node_id = 1;
+    string file_id = 2;
+    int32 chunk_id = 3;
+}
+
+message ChunkResponse {
+    bool found = 1;
+    bytes chunk_data = 2;
+    string checksum = 3;
+    string message = 4;
+}
