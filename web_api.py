@@ -13,11 +13,12 @@ import hashlib
 import tempfile
 import socket
 import random
+import uuid
 import smtplib
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import Flask, request, jsonify, send_file, render_template_string, session
+from flask import Flask, request, jsonify, send_file, render_template_string, session, redirect
 from flask_cors import CORS
 from flask_session import Session
 from werkzeug.utils import secure_filename
@@ -47,7 +48,7 @@ OTP_EXPIRY_MINUTES = 5
 # Email Configuration (Update with your email service)
 EMAIL_CONFIG = {
     'sender_email': 'akwifonguhjoy@gmail.com',
-    'sender_password': os.getenv('EMAIL_PASSWORD', 'wxnjrjiichlqzswh'),  # Get from environment variable, fallback to app password
+    'sender_password': os.getenv('EMAIL_PASSWORD', 'saqcepdqrshkfkqo'),  # Get from environment variable, fallback to app password
     'smtp_server': 'smtp.gmail.com',
     'smtp_port': 587
 }
@@ -233,9 +234,21 @@ def reset():
 @app.route('/dashboard')
 def dashboard():
     """Interactive dashboard"""
+    # Require authentication: redirect to registration if not authenticated
+    if not session.get('authenticated'):
+        return redirect('/register')
+
     try:
+        # Get user email from session
+        user_email = session.get('user_email', 'User')
+        
         with open('static/dashboard.html', 'r', encoding='utf-8') as f:
-            return f.read()
+            html_content = f.read()
+        
+        # Replace the placeholder "User" with actual email
+        html_content = html_content.replace('>User<', f'>{user_email}<')
+        
+        return html_content
     except FileNotFoundError:
         # Fallback to index.html if dashboard.html doesn't exist
         try:
@@ -246,7 +259,19 @@ def dashboard():
 
 @app.route('/')
 def index():
-    """Main page with API documentation"""
+    """Redirect root to the login page so users see login/signup first."""
+
+    # Prefer registration page on first load. Fallback to login if register missing.
+    register_path = os.path.join(app.static_folder or 'static', 'register.html')
+    if os.path.exists(register_path):
+        return redirect('/register')
+
+    # If register page missing but login exists, use login
+    login_path = os.path.join(app.static_folder or 'static', 'login.html')
+    if os.path.exists(login_path):
+        return redirect('/login')
+
+    # Fallback: render the API docs (keep existing behavior)
     html_template = """
     <!DOCTYPE html>
     <html>
@@ -281,58 +306,14 @@ def index():
                 <span class="method">GET</span> <span class="path">/api/status</span><br>
                 Get API and controller connection status
             </div>
-            
-            <div class="endpoint">
-                <span class="method">GET</span> <span class="path">/api/nodes</span><br>
-                List all registered nodes and their status
-            </div>
-            
-            <div class="endpoint">
-                <span class="method">POST</span> <span class="path">/api/nodes</span><br>
-                Create a new Z-Cloud node<br>
-                <strong>JSON body:</strong> <code>{"node_id": "CloudNode4", "host": "localhost", "port": 8084, "cpu_cores": 4, "cpu_speed": 2.5, "ram_gb": 8, "storage_gb": 500, "bandwidth_mbps": 100}</code>
-            </div>
-            
-            <div class="endpoint">
-                <span class="method">POST</span> <span class="path">/api/nodes/{node_id}/start</span><br>
-                Start a created Z-Cloud node
-            </div>
-            
-            <div class="endpoint">
-                <span class="method">GET</span> <span class="path">/api/files</span><br>
-                List all files in cloud storage<br>
-                <strong>Query params:</strong> <code>node_id</code> (optional) - filter files visible to specific node
-            </div>
-            
-            <div class="endpoint">
-                <span class="method">GET</span> <span class="path">/api/files/{file_id}</span><br>
-                Get detailed information about a specific file
-            </div>
-            
-            <div class="endpoint">
-                <span class="method">POST</span> <span class="path">/api/upload</span><br>
-                Upload a file to cloud storage<br>
-                <strong>Form data:</strong> <code>file</code> (file), <code>node_id</code> (string)
-            </div>
-            
-            <div class="endpoint">
-                <span class="method">GET</span> <span class="path">/api/download/{file_id}</span><br>
-                Download a file from cloud storage<br>
-                <strong>Query params:</strong> <code>node_id</code> (required) - requesting node ID
-            </div>
-            
-            <h2>📖 Usage Examples</h2>
-            <p><strong>Upload file:</strong> <code>curl -X POST -F "file=@example.txt" -F "node_id=CloudNode1" http://localhost:8081/api/upload</code></p>
-            <p><strong>List files:</strong> <code>curl http://localhost:8081/api/files?node_id=CloudNode1</code></p>
-            <p><strong>Download file:</strong> <code>curl http://localhost:8081/api/download/FILE_ID?node_id=CloudNode1 -o downloaded_file.txt</code></p>
-            
+
             <h2>🎛️ Interactive Dashboard</h2>
             <p><a href="/dashboard" style="display: inline-block; background: #3498db; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0;">🚀 Open Dashboard</a></p>
         </div>
     </body>
     </html>
     """
-    
+
     return render_template_string(html_template, 
                                 connected=api_client.is_connected(),
                                 controller_host=CONTROLLER_HOST,
@@ -403,17 +384,23 @@ def list_nodes():
 
 @app.route('/api/files')
 def list_files():
-    """List files in cloud storage"""
+    """List files in cloud storage for the current user"""
+    # Get current user from session
+    user_email = session.get('user_email')
+    if not user_email:
+        return jsonify({'error': 'User must be logged in to view files'}), 401
+    
     node_id = request.args.get('node_id', 'web_api')
     
     try:
         files = []
-        metadata_dir = 'cloud_storage/metadata'
+        # User-specific metadata directory
+        user_metadata_dir = os.path.join('cloud_storage', 'users', user_email, 'metadata')
         
-        if os.path.exists(metadata_dir):
-            for metadata_file in os.listdir(metadata_dir):
+        if os.path.exists(user_metadata_dir):
+            for metadata_file in os.listdir(user_metadata_dir):
                 if metadata_file.endswith('.json'):
-                    metadata_path = os.path.join(metadata_dir, metadata_file)
+                    metadata_path = os.path.join(user_metadata_dir, metadata_file)
                     try:
                         with open(metadata_path, 'r') as f:
                             file_meta = json.load(f)
@@ -422,6 +409,7 @@ def list_files():
                             'file_id': file_meta.get('file_id', ''),
                             'filename': file_meta.get('filename', ''),
                             'size': file_meta.get('size', 0),
+                            'folder': file_meta.get('folder', 'root'),
                             'checksum': file_meta.get('checksum', ''),
                             'chunk_count': file_meta.get('chunk_count', 0),
                             'upload_date': file_meta.get('upload_date', ''),
@@ -441,6 +429,67 @@ def list_files():
     
     except Exception as e:
         return jsonify({'error': f'Failed to list files: {str(e)}'}), 500
+
+
+@app.route('/api/folders', methods=['GET'])
+def list_folders():
+    """List folders stored in cloud_storage/folders.json"""
+    try:
+        folders_path = os.path.join('cloud_storage', 'folders.json')
+        if os.path.exists(folders_path):
+            with open(folders_path, 'r') as f:
+                folders = json.load(f)
+        else:
+            # Default root folder
+            folders = [{'id': 'root', 'name': 'root', 'parent': None, 'created_at': ''}]
+
+        return jsonify({'folders': folders}), 200
+    except Exception as e:
+        return jsonify({'error': f'Failed to list folders: {str(e)}'}), 500
+
+
+@app.route('/api/folders', methods=['POST'])
+def create_folder():
+    """Create a new folder and persist it to cloud_storage/folders.json"""
+    try:
+        data = request.get_json() or {}
+        name = data.get('name', '').strip()
+        parent = data.get('parent', 'root')
+
+        if not name:
+            return jsonify({'error': 'Folder name is required'}), 400
+
+        # Ensure folder storage exists
+        os.makedirs('cloud_storage', exist_ok=True)
+        folders_path = os.path.join('cloud_storage', 'folders.json')
+
+        if os.path.exists(folders_path):
+            with open(folders_path, 'r') as f:
+                folders = json.load(f)
+        else:
+            folders = []
+
+        # Prevent duplicates
+        for fdata in folders:
+            if fdata.get('name') == name and fdata.get('parent') == parent:
+                return jsonify({'error': 'Folder already exists'}), 409
+
+        folder_id = str(uuid.uuid4())
+        folder_obj = {
+            'id': folder_id,
+            'name': name,
+            'parent': parent,
+            'created_at': datetime.now().isoformat()
+        }
+
+        folders.append(folder_obj)
+
+        with open(folders_path, 'w') as f:
+            json.dump(folders, f, indent=2)
+
+        return jsonify({'success': True, 'folder': folder_obj}), 201
+    except Exception as e:
+        return jsonify({'error': f'Failed to create folder: {str(e)}'}), 500
 
 @app.route('/api/files/<file_id>')
 def get_file_info(file_id):
@@ -479,63 +528,170 @@ def upload_file():
     """Upload a file to cloud storage"""
     api_client.reconnect_if_needed()
     
-    if not api_client.is_connected():
-        return jsonify({'error': 'Controller not available'}), 503
+    # Check if user is authenticated
+    user_email = session.get('user_email')
+    if not user_email:
+        return jsonify({'error': 'User must be logged in to upload files'}), 401
     
+    # Accept optional folder param (default to 'root')
+    folder = request.form.get('folder', 'root')
+
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
-    
+
     file = request.files['file']
     node_id = request.form.get('node_id', 'web_api')
-    
+
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
-    
+
     if file.content_length and file.content_length > MAX_FILE_SIZE:
         return jsonify({'error': f'File too large. Max size: {MAX_FILE_SIZE} bytes'}), 400
-    
+
+    # Ensure user metadata directory exists
+    user_metadata_dir = os.path.join('cloud_storage', 'users', user_email, 'metadata')
+    os.makedirs(user_metadata_dir, exist_ok=True)
+
     try:
         # Save file temporarily
         filename = secure_filename(file.filename)
         temp_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(temp_path)
-        
-        # Read file and create chunks
-        def generate_upload_requests():
-            # First request with metadata
-            yield file_service_pb2.UploadRequest(
-                metadata=file_service_pb2.FileMetadata(
-                    filename=filename,
-                    uploading_node=node_id
-                )
-            )
+
+        # If controller is connected, stream to controller; otherwise fall back to local storage
+        if api_client.is_connected():
+            def generate_upload_requests():
+                # Read entire file first
+                with open(temp_path, 'rb') as f:
+                    file_data = f.read()
+                
+                # Split into chunks
+                chunk_size = 64 * 1024  # 64KB chunks
+                total_chunks = (len(file_data) + chunk_size - 1) // chunk_size
+                
+                # Yield chunks
+                for chunk_id in range(total_chunks):
+                    start = chunk_id * chunk_size
+                    end = min(start + chunk_size, len(file_data))
+                    chunk_data = file_data[start:end]
+                    
+                    is_last = (chunk_id == total_chunks - 1)
+                    
+                    yield file_service_pb2.UploadChunkRequest(
+                        filename=filename,
+                        chunk_id=chunk_id,
+                        total_chunks=total_chunks,
+                        chunk_data=chunk_data,
+                        checksum='',
+                        uploading_node_id=node_id,
+                        is_last_chunk=is_last
+                    )
+
+            # Upload file via gRPC
+            response = api_client.stub.UploadFile(generate_upload_requests())
             
-            # Subsequent requests with file chunks
-            chunk_size = 64 * 1024  # 64KB chunks
-            with open(temp_path, 'rb') as f:
-                while True:
-                    chunk = f.read(chunk_size)
-                    if not chunk:
-                        break
-                    yield file_service_pb2.UploadRequest(chunk=chunk)
-        
-        # Upload file via gRPC
-        response = api_client.stub.UploadFile(generate_upload_requests())
-        
-        # Clean up temporary file
-        os.remove(temp_path)
-        
-        return jsonify({
-            'success': response.success,
-            'message': response.message,
-            'file_id': response.file_id if response.success else None,
-            'filename': filename,
-            'uploading_node': node_id
-        })
-    
+            # Log upload response for debugging
+            print(f"[UPLOAD] File: {filename}")
+            print(f"[UPLOAD] Response - Success: {response.success}, File ID: {response.file_id}, Message: {response.message}")
+            print(f"[UPLOAD] Replicas: {list(response.replica_nodes)}")
+
+            # Determine size before removing the temporary file
+            try:
+                size_after_upload = os.path.getsize(temp_path) if os.path.exists(temp_path) else 0
+            except Exception:
+                size_after_upload = 0
+
+            # Clean up temporary file
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+
+            # Persist a lightweight metadata JSON locally to include folder info
+            if response.success and response.file_id:
+                try:
+                    # Use replica_nodes provided by controller response when available
+                    replica_nodes = []
+                    try:
+                        replica_nodes = list(response.replica_nodes)
+                    except Exception:
+                        replica_nodes = []
+
+                    meta = {
+                        'file_id': response.file_id,
+                        'filename': filename,
+                        'size': size_after_upload,
+                        'folder': folder,
+                        'checksum': '',
+                        'chunk_count': response.chunk_count,
+                        'upload_date': datetime.now().isoformat(),
+                        'uploading_node': node_id,
+                        'user_email': user_email,
+                        'replica_nodes': replica_nodes,
+                        'online_replicas': len(replica_nodes)
+                    }
+                    meta_path = os.path.join('cloud_storage', 'users', user_email, 'metadata', f"{response.file_id}.json")
+                    with open(meta_path, 'w') as mf:
+                        json.dump(meta, mf, indent=2)
+                    print(f"[UPLOAD] Metadata saved to {meta_path}")
+                except Exception as e:
+                    print(f"[UPLOAD] Failed to save metadata: {e}")
+            else:
+                print(f"[UPLOAD] Upload failed - not saving metadata")
+
+            return jsonify({
+                'success': response.success,
+                'message': response.message,
+                'file_id': response.file_id if response.success else None,
+                'filename': filename,
+                'uploading_node': node_id,
+                'folder': folder
+            })
+
+        else:
+            # Controller offline: persist file locally and write metadata
+            # Move temp file into uploads (already saved there)
+            file_id = str(uuid.uuid4())
+            try:
+                size = os.path.getsize(temp_path)
+            except Exception:
+                size = 0
+
+            metadata = {
+                'file_id': file_id,
+                'filename': filename,
+                'size': size,
+                'folder': folder,
+                'checksum': '',
+                'chunk_count': 0,
+                'upload_date': datetime.now().isoformat(),
+                'uploading_node': node_id,
+                'user_email': user_email,
+                'replica_nodes': [],
+                'online_replicas': 0
+            }
+
+            try:
+                meta_path = os.path.join('cloud_storage', 'users', user_email, 'metadata', f"{file_id}.json")
+                with open(meta_path, 'w') as mf:
+                    json.dump(metadata, mf, indent=2)
+
+                return jsonify({
+                    'success': True,
+                    'message': 'Saved locally (controller offline)',
+                    'file_id': file_id,
+                    'filename': filename,
+                    'folder': folder
+                })
+            except Exception as e:
+                # Clean up file on failure
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+                return jsonify({'error': f'Failed to save file locally: {str(e)}'}), 500
+
     except Exception as e:
         # Clean up temporary file on error
-        if os.path.exists(temp_path):
+        if 'temp_path' in locals() and os.path.exists(temp_path):
             os.remove(temp_path)
         return jsonify({'error': f'Upload failed: {str(e)}'}), 500
 
@@ -681,39 +837,42 @@ def download_file(file_id):
     if not api_client.is_connected():
         return jsonify({'error': 'Controller not available'}), 503
 
-    node_id = request.args.get('node_id')
-    if not node_id:
-        return jsonify({'error': 'node_id parameter required'}), 400
-
     try:
-        # Request file download
-        response = api_client.stub.DownloadFile(
-            file_service_pb2.DownloadRequest(
-                file_id=file_id,
-                requesting_node=node_id
-            )
-        )
-
-        if not response.success:
-            return jsonify({'error': response.message}), 404
-
+        # First, get the filename from metadata
+        metadata_path = os.path.join('cloud_storage', 'metadata', f'{file_id}.json')
+        if not os.path.exists(metadata_path):
+            return jsonify({'error': 'File metadata not found'}), 404
+        
+        with open(metadata_path, 'r') as f:
+            metadata = json.load(f)
+        
+        filename = metadata.get('filename', f'file_{file_id}')
+        
+        # Request file download from controller using filename
+        node_id = request.args.get('node_id', 'web_api')
+        
         # Create temporary file for download
-        temp_file = tempfile.NamedTemporaryFile(delete=False)
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(filename)[1])
         temp_path = temp_file.name
 
-        # Write file chunks to temporary file
-        for chunk_response in response:
-            if chunk_response.chunk:
-                temp_file.write(chunk_response.chunk)
+        # Stream chunks from controller
+        chunk_count = 0
+        for chunk_response in api_client.stub.DownloadFile(
+            file_service_pb2.DownloadRequest(
+                requesting_node_id=node_id,
+                filename=filename,
+                preferred_replica=""
+            )
+        ):
+            if chunk_response.chunk_data:
+                temp_file.write(chunk_response.chunk_data)
+                chunk_count += 1
 
         temp_file.close()
-
-        # Get original filename from file info
-        file_info_response = api_client.stub.GetFileInfo(
-            file_service_pb2.FileInfoRequest(file_id=file_id)
-        )
-
-        filename = file_info_response.file_info.filename if file_info_response.found else f"file_{file_id}"
+        
+        if chunk_count == 0:
+            os.unlink(temp_path)
+            return jsonify({'error': 'No data received from controller'}), 404
 
         return send_file(
             temp_path,
@@ -722,8 +881,89 @@ def download_file(file_id):
             mimetype='application/octet-stream'
         )
 
+    except grpc.RpcError as e:
+        return jsonify({'error': f'Download failed: {e.details()}'}), 500
     except Exception as e:
         return jsonify({'error': f'Download failed: {str(e)}'}), 500
+
+
+@app.route('/api/download_by_name')
+def download_by_name():
+    """Download a file by filename from the web_uploads folder (fallback simple server download)."""
+    filename = request.args.get('filename')
+    if not filename:
+        return jsonify({'error': 'filename parameter required'}), 400
+
+    # Prevent path traversal
+    filename = secure_filename(filename)
+    file_path = os.path.join(UPLOAD_FOLDER, filename)
+    if os.path.exists(file_path):
+        try:
+            return send_file(file_path, as_attachment=True, download_name=filename)
+        except Exception as e:
+            return jsonify({'error': f'Failed to send file: {str(e)}'}), 500
+
+    # Try to find in metadata (if file stored in cloud_storage)
+    metadata_dir = os.path.join('cloud_storage', 'metadata')
+    if os.path.exists(metadata_dir):
+        for m in os.listdir(metadata_dir):
+            if not m.endswith('.json'):
+                continue
+            try:
+                with open(os.path.join(metadata_dir, m), 'r') as f:
+                    meta = json.load(f)
+                if meta.get('filename') == filename:
+                    # No direct file available on web_api; instruct client to use file_id download
+                    return jsonify({'file_id': meta.get('file_id')}), 200
+            except Exception:
+                continue
+
+    return jsonify({'error': 'File not found'}), 404
+
+
+@app.route('/api/files/delete', methods=['POST'])
+def delete_file_by_name():
+    """Delete a file by filename: remove web_uploads file and associated metadata JSON if present."""
+    try:
+        data = request.get_json() or {}
+        filename = data.get('filename')
+        if not filename:
+            return jsonify({'error': 'filename required'}), 400
+
+        filename_safe = secure_filename(filename)
+        removed = False
+
+        # Remove from web_uploads
+        web_path = os.path.join(UPLOAD_FOLDER, filename_safe)
+        if os.path.exists(web_path):
+            try:
+                os.remove(web_path)
+                removed = True
+            except Exception as e:
+                return jsonify({'error': f'Failed to remove uploaded file: {str(e)}'}), 500
+
+        # Remove metadata entries
+        metadata_dir = os.path.join('cloud_storage', 'metadata')
+        if os.path.exists(metadata_dir):
+            for m in os.listdir(metadata_dir):
+                if not m.endswith('.json'):
+                    continue
+                path = os.path.join(metadata_dir, m)
+                try:
+                    with open(path, 'r') as f:
+                        meta = json.load(f)
+                    if meta.get('filename') == filename:
+                        os.remove(path)
+                        removed = True
+                except Exception:
+                    continue
+
+        if removed:
+            return jsonify({'success': True, 'filename': filename}), 200
+        else:
+            return jsonify({'error': 'File not found'}), 404
+    except Exception as e:
+        return jsonify({'error': f'Failed to delete file: {str(e)}'}), 500
 
 # ===== USER MANAGEMENT ENDPOINTS =====
 
@@ -745,6 +985,13 @@ def register_user():
 
         if len(password) < 6:
             return jsonify({'error': 'Password must be at least 6 characters long'}), 400
+
+        # Check if email is already in use (both registered and in OTP storage)
+        if email in user_manager.users:
+            return jsonify({'error': 'This email is already registered. Please login or use a different email.'}), 409
+        
+        if email in OTP_STORAGE:
+            return jsonify({'error': 'This email is already in the registration process. Please check your email for the OTP.'}), 409
 
         # Register user
         result = user_manager.register_user(email, password)
@@ -854,6 +1101,14 @@ def verify_registration_otp():
         # Mark email as verified in user_manager
         user_manager.verify_email(email, otp)
 
+        # Mark user session as verified and optionally sign in
+        session['user_email'] = email
+        session['authenticated'] = True
+
+        # If the client expects HTML (form submission), redirect to dashboard
+        if request.accept_mimetypes.accept_html and not request.is_json:
+            return redirect('/dashboard')
+
         return jsonify({
             'success': True,
             'message': 'Email verified successfully! You can now log in.',
@@ -954,6 +1209,10 @@ def verify_otp():
         session['user_email'] = email
         session['authenticated'] = True
 
+        # If client prefers HTML (browser form), redirect to dashboard
+        if request.accept_mimetypes.accept_html and not request.is_json:
+            return redirect('/dashboard')
+
         return jsonify({
             'success': True,
             'message': 'Authentication successful',
@@ -983,6 +1242,12 @@ def login_user():
         if result['success']:
             # Store user session (simplified - in production use proper session management)
             session['user_email'] = email
+            session['authenticated'] = True
+
+            # If browser form submission or client prefers HTML, redirect to dashboard
+            if request.accept_mimetypes.accept_html and not request.is_json:
+                return redirect('/dashboard')
+
             return jsonify({
                 'success': True,
                 'message': result['message'],

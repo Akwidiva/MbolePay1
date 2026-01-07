@@ -150,6 +150,7 @@ message UploadResponse {
     string file_id = 3;
     repeated string replica_nodes = 4;
     int64 total_size = 5;
+    int32 chunk_count = 6;
 }
 
 // File download messages

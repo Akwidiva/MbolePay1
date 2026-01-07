@@ -93,28 +93,21 @@ class UserManager:
 
     def register_user(self, email: str, password: str) -> Dict:
         """Register a new user - OTP will be sent by web_api"""
-        # Check if user already exists
+        # Check if user already exists - reject if email is already registered
         if email in self.users:
-            user = self.users[email]
-            if user.get('verified', False):
-                return {'success': False, 'message': 'User already registered and verified'}
-            # Allow re-registration if not verified
-            user['password_hash'] = self._hash_password(password)
-            user['verification_code'] = self._generate_verification_code()
-            user['verification_sent_at'] = time.time()
-            user['registered_at'] = time.time()
-        else:
-            # Create new user
-            self.users[email] = {
-                'email': email,
-                'password_hash': self._hash_password(password),
-                'verified': False,
-                'verification_code': self._generate_verification_code(),
-                'verification_sent_at': time.time(),
-                'registered_at': time.time(),
-                'verified_at': None,
-                'last_login': None
-            }
+            return {'success': False, 'message': 'This email is already registered. Please login or use a different email.'}
+        
+        # Create new user
+        self.users[email] = {
+            'email': email,
+            'password_hash': self._hash_password(password),
+            'verified': False,
+            'verification_code': self._generate_verification_code(),
+            'verification_sent_at': time.time(),
+            'registered_at': time.time(),
+            'verified_at': None,
+            'last_login': None
+        }
 
         # Save user to database
         self._save_users()

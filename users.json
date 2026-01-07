@@ -1,24 +1,4 @@
 {
-  "akwifonguhjoy@gmail.com": {
-    "email": "akwifonguhjoy@gmail.com",
-    "password_hash": "0498e4ccc6354b2ca0278875009a4b6122e947a00071b04ea1eb120a62ebdbba",
-    "verified": false,
-    "verification_code": "859467",
-    "verification_sent_at": 1764874943.0068936,
-    "registered_at": 1764874943.0068939,
-    "verified_at": null,
-    "last_login": null
-  },
-  "vcraftgraphics@gmail.com": {
-    "email": "vcraftgraphics@gmail.com",
-    "password_hash": "5d5437f805f9818f47f45909cb95063598d4bd801580106e32d3ea8cc4e15948",
-    "verified": false,
-    "verification_code": "946613",
-    "verification_sent_at": 1765205750.2373157,
-    "registered_at": 1765205750.2373161,
-    "verified_at": null,
-    "last_login": null
-  },
   "fonguh.joyakwi@ictuniversity.edu.cm": {
     "email": "fonguh.joyakwi@ictuniversity.edu.cm",
     "password_hash": "275f38d25cc0546b8e436e4130fc2666884a637336fe3cdeb9b3076658ee3a2d",

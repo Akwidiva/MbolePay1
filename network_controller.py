@@ -11,6 +11,7 @@ import os
 os.environ["PYTHONIOENCODING"] = "utf-8"
 import grpc
 import time
+from datetime import datetime
 import threading
 import socket
 import json
@@ -264,7 +265,12 @@ class NetworkController(file_service_pb2_grpc.FileServiceServicer):
         print(self.terminal.box(success_info, "CONTROLLER ONLINE", 'green'))
         print()
         
-        # Start interactive mode
+        # Start interactive mode in a separate thread so it doesn't block gRPC
+        import threading
+        interactive_thread = threading.Thread(target=self.run_interactive_mode, daemon=True)
+        interactive_thread.start()
+        
+        # Keep main threa        # Start interactive mode
         self.run_interactive_mode()
     
     def display_startup_config(self):
@@ -595,7 +601,8 @@ class NetworkController(file_service_pb2_grpc.FileServiceServicer):
                     message="File uploaded and replicated successfully",
                     file_id=file_id,
                     replica_nodes=replica_nodes,
-                    total_size=upload_info['total_size']
+                    total_size=upload_info['total_size'],
+                    chunk_count=len(file_chunks)
                 )
             else:
                 error_msg = f"{self.terminal.icon('error')} Incomplete file upload"
@@ -607,7 +614,8 @@ class NetworkController(file_service_pb2_grpc.FileServiceServicer):
                     message="Incomplete file upload",
                     file_id="",
                     replica_nodes=[],
-                    total_size=0
+                    total_size=0,
+                    chunk_count=0
                 )
                 
         except Exception as e:
@@ -620,7 +628,8 @@ class NetworkController(file_service_pb2_grpc.FileServiceServicer):
                 message=f"Upload failed: {str(e)}",
                 file_id="",
                 replica_nodes=[],
-                total_size=0
+                total_size=0,
+                chunk_count=0
             )
     
     def DownloadFile(self, request, context):
@@ -714,7 +723,7 @@ class NetworkController(file_service_pb2_grpc.FileServiceServicer):
             'size': total_size,
             'checksum': file_checksum,
             'chunk_count': len(file_chunks),
-            'upload_date': self.timestamp(),
+            'upload_date': datetime.now().isoformat(),
             'uploading_node': uploading_node,
             'replica_nodes': [],
             'visible_to_nodes': online_nodes_at_upload,  # Track which nodes can see this file
@@ -774,28 +783,24 @@ class NetworkController(file_service_pb2_grpc.FileServiceServicer):
         with self.files_lock:
             self.files[file_id]['replica_nodes'] = replica_nodes
         
-        completion_msg = f"{self.terminal.icon('shield')} File '{file_info['filename']}' replicated to {len(replica_nodes)} nodes"
-        print(f"{self.terminal.colored(completion_msg, 'green')}")
-        
         return replica_nodes
     
-    def select_best_replica(self, replica_nodes: List[str], preferred_replica: str = "") -> str:
-        """Select the best available replica"""
-        if preferred_replica and preferred_replica in replica_nodes:
-            with self.nodes_lock:
-                if (preferred_replica in self.nodes and 
-                    self.nodes[preferred_replica]['status']['is_online']):
-                    return preferred_replica
-        
+    def select_best_replica(self, replica_nodes: List[str], preferred_replica: str) -> str:
+        """Select the best replica node for download"""
         online_replicas = []
+        
         with self.nodes_lock:
+            # Prioritize preferred replica if it's online
+            if preferred_replica and preferred_replica in replica_nodes and self.nodes.get(preferred_replica, {}).get('status', {}).get('is_online'):
+                return preferred_replica
+            
+            # Otherwise, find any online replica
             for node_id in replica_nodes:
-                if (node_id in self.nodes and 
-                    self.nodes[node_id]['status']['is_online']):
+                if node_id in self.nodes and self.nodes[node_id]['status']['is_online']:
                     online_replicas.append(node_id)
         
         return online_replicas[0] if online_replicas else None
-    
+
     def get_file_chunks(self, file_id: str) -> Dict:
         """Retrieve file chunks from storage"""
         with self.files_lock:
@@ -803,11 +808,11 @@ class NetworkController(file_service_pb2_grpc.FileServiceServicer):
                 return self.files[file_id]['chunks']
         return {}
     
-    def GetNodeStatus(self, request, context):
-        """Get status of nodes"""
-        nodes_info = []
-        
-        with self.nodes_lock:
+def GetNodeStatus(self, request, context):
+    """Get status of nodes"""
+    nodes_info = []
+    
+    with self.nodes_lock:
             target_nodes = [request.target_node_id] if request.target_node_id else self.nodes.keys()
             
             for node_id in target_nodes:
@@ -838,7 +843,7 @@ class NetworkController(file_service_pb2_grpc.FileServiceServicer):
                     )
                     nodes_info.append(node_info)
         
-        return file_service_pb2.NodeStatusResponse(nodes=nodes_info)
+            return file_service_pb2.NodeStatusResponse(nodes=nodes_info)
     
     def ListFiles(self, request, context):
         """List files available to the requesting node based on visibility permissions"""
