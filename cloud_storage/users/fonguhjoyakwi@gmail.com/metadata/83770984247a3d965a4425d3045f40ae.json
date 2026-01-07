@@ -1,0 +1,17 @@
+{
+  "file_id": "83770984247a3d965a4425d3045f40ae",
+  "filename": "resumemanage.png",
+  "size": 40020,
+  "folder": "akwi",
+  "checksum": "",
+  "chunk_count": 1,
+  "upload_date": "2026-01-07T04:37:27.402161",
+  "uploading_node": "web_api",
+  "user_email": "fonguhjoyakwi@gmail.com",
+  "replica_nodes": [
+    "Node1",
+    "Node2",
+    "Node3"
+  ],
+  "online_replicas": 3
+}

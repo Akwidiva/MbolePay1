@@ -1,0 +1,13 @@
+{
+  "node_id": "Node2",
+  "host": "localhost",
+  "port": 5002,
+  "cpu_cores": 4,
+  "cpu_speed": 2.4,
+  "ram_gb": 8,
+  "storage_gb": 100,
+  "bandwidth_mbps": 1000,
+  "mac_address": "02:02:02:00:00:01",
+  "created_at": "2026-01-07T04:01:00",
+  "status": "configured"
+}

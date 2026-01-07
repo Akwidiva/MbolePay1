@@ -1,0 +1,20 @@
+[
+  {
+    "id": "828ff63a-c85d-4fd6-a170-bf0231cde42e",
+    "name": "akwi",
+    "parent": "root",
+    "created_at": "2026-01-05T13:03:39.104463"
+  },
+  {
+    "id": "f7ee569d-f200-43f8-810b-3dadae119bbe",
+    "name": "joy",
+    "parent": "root",
+    "created_at": "2026-01-05T13:03:59.853189"
+  },
+  {
+    "id": "39f5c0de-7371-46c7-82af-d1c8fa552525",
+    "name": "Videos",
+    "parent": "root",
+    "created_at": "2026-01-07T04:07:24.103636"
+  }
+]

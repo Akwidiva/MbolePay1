@@ -1,0 +1,17 @@
+{
+  "file_id": "c3536b70ef765befce5378712a9ae17f",
+  "filename": "Screenshot_2025-11-24_093847.png",
+  "size": 87948,
+  "folder": "akwi",
+  "checksum": "",
+  "chunk_count": 2,
+  "upload_date": "2026-01-07T04:44:13.321755",
+  "uploading_node": "web_api",
+  "user_email": "fonguh.joyakwi@ictuniversity.edu.cm",
+  "replica_nodes": [
+    "Node1",
+    "Node2",
+    "Node3"
+  ],
+  "online_replicas": 3
+}
